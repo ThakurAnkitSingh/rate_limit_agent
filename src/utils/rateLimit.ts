@@ -4,8 +4,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const redis = new Redis({
+  username:process.env.REDIS_USERNAME,
   host: process.env.REDIS_HOST,
   port: parseInt(process.env.REDIS_PORT || "6379"),
+  password:process.env.REDIS_PASSWORD,
 });
 
 
