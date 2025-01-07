@@ -4,9 +4,9 @@ import { generateAPIKeyService } from '../services/authService';
 
 const generateAPIKeyController = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userId } = req.body;
+    const { appId } = req.body;
 
-    const apiKey = await generateAPIKeyService(userId);
+    const apiKey = await generateAPIKeyService(appId);
     if (!apiKey) {
       res.status(400).json({ message: 'Unable to generate API Key' });
     }else{

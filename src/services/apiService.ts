@@ -3,15 +3,15 @@ import { RegisterAppRequestBody } from '../interfaces/interface';
 
 // Handles the logic for registering an app
 export const registerAppService = async (appData: RegisterAppRequestBody): Promise<string> => {
-  const { name, baseUrl, rateLimitStrategy, requestCount, timeWindow } = appData;
+  const { name, baseUrl, strategy, requestCount, timeWindow } = appData;
 
   const { data, error } = await supabase
-    .from('users')
+    .from('apps')
     .insert([
       {
         name,
         base_url: baseUrl,
-        rate_limit_strategy: rateLimitStrategy,
+        rate_limit_strategy: strategy,
         request_count: requestCount,
         time_window: timeWindow,
       },

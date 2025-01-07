@@ -2,17 +2,17 @@
 export interface RegisterAppRequestBody {
     name: string;
     baseUrl: string;
-    rateLimitStrategy: 'token_bucket' | 'rolling_window';
+    strategy: 'token_bucket' | 'rolling_window';
     requestCount: number;
     timeWindow: number;
   }
   
   // Represents a user in the database
-  export interface User {
+  export interface App {
     id: string;
     name: string;
     base_url: string;
-    rate_limit_strategy: string;
+    strategy: string;
     request_count: number;
     time_window: number;
   }

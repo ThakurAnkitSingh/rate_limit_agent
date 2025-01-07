@@ -10,7 +10,7 @@ if (!JWT_SECRET) {
 }
 
 interface JWTDecoded {
-  userId: string;
+  appId: string;
 }
 
 

@@ -5,33 +5,31 @@ import { generateJWT } from '../utils/jwt';
 const redis = new Redis({
   host: process.env.REDIS_HOST,
   port: parseInt(process.env.REDIS_PORT || "6379"),
+  password: process.env.REDIS_PASSWORD,
 });
 
-export const generateAPIKeyService = async (userId: string): Promise<string | null> => {
-  // Check if user exists
-  const { data: user, error } = await supabase
-    .from('users')
+export const generateAPIKeyService = async (appId: string): Promise<string | null> => {
+  // Checking if app info exists
+  const { data: app, error } = await supabase
+    .from('apps')
     .select('*')
-    .eq('id', userId)
+    .eq('id', appId)
     .single();
 
-  if (error || !user) {
-    throw new Error('User not found');
+  if (error || !app) {
+    throw new Error('App info not found');
   }
 
-  // Generate API Key
-  const apiKey = generateJWT({ userId });
+  // Generating API Key
+  const apiKey = generateJWT({ appId });
 
   // Save the API Key to the database
   const { error: insertError } = await supabase
     .from('api_keys')
-    .insert([{ user_id: userId, api_key: apiKey }]);
+    .insert([{ app_id: appId, api_key: apiKey }]);
 
   if (insertError) {
     throw new Error(insertError.message);
   }
-
-  const bucketKey = `rate_limit:${userId}:${apiKey}`;
-  await redis.set(bucketKey, user.request_count);
   return apiKey;
 };

@@ -8,135 +8,164 @@ const redis = new Redis({
   port: parseInt(process.env.REDIS_PORT || "6379"),
 });
 
-// Token Bucket Rate Limiting
+
+// Token Bucket Algorithm
 export const applyTokenBucketLimit = async (
-  userId: string,
-  apikey: string,
-  appData: any
-) => {
-  const bucketKey = `rate_limit:${userId}:${apikey}`;
-  const { request_count, time_window } = appData; // e.g., 100 requests per hour
-
-  const currentTokens = await redis.get(bucketKey);
-
-  console.log(currentTokens, "Tokens")
-
-  // If the bucket is empty, deny request
-  if (currentTokens === null || parseInt(currentTokens) <= 0) {
-    return true; // Rate limit exceeded
-  }
-
-  // Decrement the token count
-  await redis.decr(bucketKey);
-
-  // Refill tokens periodically (this should happen regardless of current tokens)
-  if (currentTokens === null || parseInt(currentTokens) < request_count) {
-    await redis.set(bucketKey, request_count - 1, "EX", time_window);
-  }
-
-  return false; // Rate limit not exceeded
-};
-
-// Rolling Window Rate Limiting
-export const applyRollingWindowLimit = async (
-  userId: string,
+  appId: string,
   apiKey: string,
   appData: any
 ) => {
-  const windowKey = `rolling_window:${userId}:${apiKey}`;
-  const { request_count, time_window } = appData; // e.g., 100 requests per 1 hour
+  const bucketKey = `rate_limit:${appId}:${apiKey}`;
+  const queueKey = `queue:${appId}:${apiKey}`;
+  const { request_count, time_window } = appData;
 
-  // Get the list of timestamps for the user's previous requests
-  const timestamps = await redis.lrange(windowKey, 0, -1);
+  let currentTokens = await redis.get(bucketKey) as any;
 
-  // Filter out timestamps outside of the time window
-  const currentTime = Date.now();
-  const validTimestamps = timestamps.filter(
-    (timestamp) => currentTime - parseInt(timestamp) <= time_window
-  );
-
-  // If the number of valid requests exceeds the limit, deny the request
-  if (validTimestamps.length >= request_count) {
-    return true; // Rate limit exceeded
+  if (currentTokens === null) {
+    await redis.set(bucketKey, request_count, "EX", time_window);
+    currentTokens = request_count.toString();
   }
 
-  // Add the current timestamp to the list of timestamps
-  await redis.lpush(windowKey, currentTime.toString());
-  await redis.expire(windowKey, time_window); // Set expiration time for the list
+  const tokens = parseInt(currentTokens);
 
-  return false; // Rate limit not exceeded
+  if (tokens <= 0) {
+    // Queue the request if no tokens are left
+    console.log("No tokens available, queueing request.");
+    await redis.lpush(queueKey, JSON.stringify({ appId, apiKey, timestamp: Date.now() }));
+    return true; // Indicate the request is queued
+  }
+
+  // Decrement the token count and process queued requests
+  await redis.decr(bucketKey);
+  await processTokenBucketQueue(queueKey, bucketKey);
+
+  return false; // Indicate the request was processed
+};
+
+// Rolling Window Algorithm
+export const applyRollingWindowLimit = async (
+  appId: string,
+  apiKey: string,
+  appData: any
+) => {
+  const windowKey = `rolling_window:${appId}:${apiKey}`;
+  const queueKey = `queue:${appId}:${apiKey}`;
+  const { request_count, time_window } = appData;
+
+  const timestamps = await redis.lrange(windowKey, 0, -1);
+  const currentTime = Date.now();
+  const timeWindowMs = time_window * 1000;
+
+  const validTimestamps = timestamps.filter(
+    (timestamp) => currentTime - parseInt(timestamp) <= timeWindowMs
+  );
+
+  if (validTimestamps.length >= request_count) {
+    // Indicate that now our request will be in the queued
+    console.log("Rate limit exceeded, queueing request.");
+    await redis.lpush(queueKey, JSON.stringify({ appId, apiKey, timestamp: Date.now() }));
+    return true; 
+  }
+
+  // Add the current timestamp and process queued requests
+  await redis.lpush(windowKey, currentTime.toString());
+  await redis.expire(windowKey, Math.ceil(time_window));
+  await processRollingWindowQueue(queueKey, windowKey, appId, apiKey, request_count);
+  
+  return false; // It indicate that our request was processed
 };
 
 
-// testing 
+// Process Queue for Token Bucket
+const processTokenBucketQueue = async (queueKey: string, bucketKey: string) => {
+  let tokens = await redis.get(bucketKey) as any;
+  tokens = tokens ? parseInt(tokens) : 0;
+  
+  console.log("tokens Available in Queue: ", tokens)
+  
+  while (tokens > 0) {
+    const queuedRequest = await redis.rpop(queueKey);
+    if (!queuedRequest) break;
+    
+    console.log("Processing queued request:", JSON.parse(queuedRequest));
+    tokens = await redis.decr(bucketKey);
+    console.log("After Decrement tokens Available in Queue: ", tokens)
+    
+  }
+};
 
-// const applyTokenBucketLimitTest = async (userId: string, apikey: string, request_count: number, time_window: number) => {
-//   const bucketKey = `rate_limit:${userId}:${apikey}`;
+const processRollingWindowQueue = async (
+  queueKey: string,
+  windowKey: string,
+  appId: string,
+  apiKey: string,
+  rateLimiter: number
+) => {
+  let limit = rateLimiter;
 
-//   // Check the current token count in the bucket
-//   let currentTokens = await redis.get(bucketKey);
-//   if (currentTokens === null) {
-//     // If the bucket doesn't exist, initialize it with the maximum token count
-//     await redis.set(bucketKey, request_count, "EX", time_window);  // Set expiration for the time window
-//     currentTokens = request_count.toString();
-//   }
+  while (limit > 0) {
+    const queuedRequest = await redis.rpop(queueKey);
+    if (!queuedRequest) break;
 
-//   currentTokens = parseInt(currentTokens) as any;
+    console.log("Processing queued request:", JSON.parse(queuedRequest));
 
-//   // If no tokens are available, deny the request
-//   if (!currentTokens) {
-//     return true;  // Rate limit exceeded
-//   }
+    // Add the current timestamp to the window for each processed request
+    await redis.lpush(windowKey, Date.now().toString());
+    
+    const bucketKey = `rate_limit:${appId}:${apiKey}`;
+    await redis.decr(bucketKey); // Decrement the rate limiter
 
-//   // Decrement the token count
-//   await redis.decr(bucketKey);
+    limit -= 1;
+  }
+};
 
-//   // Refill tokens periodically after the time window
-//   setInterval(async () => {
-//     const tokens = await redis.get(bucketKey) as string;
-//     if (parseInt(tokens) < request_count) {
-//       await redis.incr(bucketKey);  // Increment token count to refill
-//     }
-//   }, time_window * 1000);  // Refills after each time window
 
-//   return false;  // Rate limit not exceeded
+
+// // Leaky Bucket Algorithm
+// export const applyLeakyBucketWithQueue = async (
+  //   appId: string,
+  //   apiKey: string,
+  //   appData: any
+// ) => {
+//   const bucketKey = `leaky_bucket:${appId}:${apiKey}`;
+//   const queueKey = `queue:${appId}:${apiKey}`;
+//   const { request_count, time_window } = appData;
+
+//   const currentTime = Date.now();
+//   let lastProcessedTime = await redis.get(bucketKey);
+  
+//   if (lastProcessedTime === null) {
+  //     await redis.set(bucketKey, currentTime.toString(), "EX", time_window);
+  //     lastProcessedTime = currentTime.toString();
+  //   }
+  
+  //   const elapsedTime = currentTime - parseInt(lastProcessedTime);
+  //   const tokensDripped = Math.floor(elapsedTime / time_window) * request_count;
+  
+  //   const tokensAvailable = Math.min(request_count, tokensDripped);
+  
+  //   if (tokensAvailable <= 0) {
+    //     console.log("Bucket is full, queueing request.");
+    //     await redis.lpush(queueKey, JSON.stringify({ appId, apiKey, timestamp: Date.now() }));
+    //     return true; // Indicate the request is queued
+    //   }
+    
+    //   await redis.set(bucketKey, currentTime.toString(), "EX", time_window);
+//   await processLeakyBucketQueue(queueKey, bucketKey);
+
+//   return false; // Indicate the request was processed
 // };
-// // / Test the flow with multiple requests
-// const testRateLimiting = async () => {
-//   const userId = "15";
-//   const apiKey = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE1LCJpYXQiOjE3MzYyMjg3MTcsImV4cCI6MTczNjIzMjMxN30.Mhsv5h3ZPYzL8lB0rm_hSwIDlaw1vZuJowvvlS0Ookg`;
-//   const request_count = 10;  // Max requests allowed per time window
-//   const time_window = 60;   // Time window in seconds
 
-//   // Simulate 5 requests
-//   for (let i = 1; i <= 100; i++) {
-//     console.log(`Request #${i}`);
-//     const result = await applyTokenBucketLimitTest(userId, apiKey, request_count, time_window);
-//     if (result) {
-//       console.log("Rate limit exceeded, can't process the request.");
-//     } else {
-//       console.log("Request processed.");
-//     }
-//     console.log("--------------------");
-//     // Add a delay of 5 seconds between requests for testing
-//     await new Promise(resolve => setTimeout(resolve, 5000));
+
+// Process Queue for Leaky Bucket
+// const processLeakyBucketQueue = async (queueKey: string, bucketKey: string) => {
+//   const tokensAvailable = await redis.get(bucketKey);
+//   if (!tokensAvailable || parseInt(tokensAvailable) <= 0) return;
+
+//   while (true) {
+//     const queuedRequest = await redis.rpop(queueKey);
+//     if (!queuedRequest) break;
+
+//     console.log("Processing queued request:", JSON.parse(queuedRequest));
 //   }
 // };
-
-// // Test rate limiting behavior
-// const runTest = async () => {
-//   const userId = "15";
-//   const apiKey = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE1LCJpYXQiOjE3MzYyMjg3MTcsImV4cCI6MTczNjIzMjMxN30.Mhsv5h3ZPYzL8lB0rm_hSwIDlaw1vZuJowvvlS0Ookg`;
-//   const request_count = 10;  // Max requests allowed per time window
-//   const time_window = 60;   // Time window in seconds
-
-//   // Initialize the token bucket in Redis for the first time
-//   await redis.set(`rate_limit:${userId}:${apiKey}`, request_count, "EX", time_window);
-
-//   // Run the test to simulate the requests
-//   await testRateLimiting();
-//   // redis.disconnect();  // Close the Redis connection after test
-// };
-
-// // Start the test
-// runTest().catch(console.error);

@@ -1,4 +1,4 @@
-import { Request } from "express"; // Import Request to extend it
+import { Request } from "express";
 import supabase from "../config/supabase";
 
 import {
@@ -6,7 +6,6 @@ import {
   applyRollingWindowLimit,
 } from "../utils/rateLimit";
 
-// Extend Request to include 'user'
 declare global {
   namespace Express {
     interface Request {
@@ -15,35 +14,35 @@ declare global {
   }
 }
 
-export const proxyRequestService = async (req: Request, userId: string) => {
+export const proxyRequestService = async (req: Request, appId: string) => {
   try {
     // Fetch app data
     const { data: appData, error } = await supabase
-      .from("users")
+      .from("apps")
       .select("*")
-      .eq("id", userId)
+      .eq("id", appId)
       .single();
 
     if (error || !appData) {
       throw new Error("App not found");
     }
 
-    // Apply rate limiting
     const apiKey = req.headers["x-api-key"] as string;
     let rateLimitExceeded = false;
 
+    // Based on conditions we can apply three varient types of rate limit strategies - token_bucket, rolling_window and leaky_bucket
     if (appData.rate_limit_strategy === "token_bucket") {
-      rateLimitExceeded = await applyTokenBucketLimit(userId, apiKey, appData);
+      rateLimitExceeded = await applyTokenBucketLimit(appId, apiKey, appData);
     } else if (appData.rate_limit_strategy === "rolling_window") {
-      rateLimitExceeded = await applyRollingWindowLimit(
-        userId,
-        apiKey,
-        appData
-      );
+      rateLimitExceeded = await applyRollingWindowLimit(appId, apiKey, appData);
     }
 
     if (rateLimitExceeded) {
-      throw new Error("Rate limit exceeded");
+      // returning user hits its maximum request in the given period
+      return {
+        message: "Rate limit exceeded, Queue System On",
+        status: 429,
+      };
     }
 
     const headers = new Headers();
@@ -59,19 +58,17 @@ export const proxyRequestService = async (req: Request, userId: string) => {
 
     let body = req.body;
     if (body && typeof body === "object") {
-      // Only serialize the body for non-GET requests
       body = JSON.stringify(body);
       headers.set("Content-Type", "application/json");
-      headers.set("Content-Length", Buffer.byteLength(body).toString()); // Manually set Content-Length
+      headers.set("Content-Length", Buffer.byteLength(body).toString()); 
     } else {
       body = undefined; // Avoid sending a body with GET/HEAD requests
     }
 
-
     let targetMethod = req.method;
-    if(body == "{}" || !body){
+    if (body == "{}" || !body) {
       targetMethod = "GET";
-      body = null;
+      body = undefined;
     }
 
     // Proxy the request to the target API
@@ -89,7 +86,3 @@ export const proxyRequestService = async (req: Request, userId: string) => {
     return error;
   }
 };
-
-
-// Refill Strategy
-// Queue System
