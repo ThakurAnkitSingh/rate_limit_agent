@@ -59,17 +59,28 @@ export const proxyRequestService = async (req: Request, userId: string) => {
 
     let body = req.body;
     if (body && typeof body === "object") {
-      // If the body is an object, assume it's JSON and serialize it
+      // Only serialize the body for non-GET requests
       body = JSON.stringify(body);
       headers.set("Content-Type", "application/json");
       headers.set("Content-Length", Buffer.byteLength(body).toString()); // Manually set Content-Length
+    } else {
+      body = undefined; // Avoid sending a body with GET/HEAD requests
     }
 
+
+    let targetMethod = req.method;
+    if(body == "{}" || !body){
+      targetMethod = "GET";
+      body = null;
+    }
+
+    // Proxy the request to the target API
     const response = await fetch(appData.base_url, {
-      method: req.method,
+      method: targetMethod, // Use the determined target method
       headers: headers,
-      // body: body, // Pass the request body along with the request
+      body: body,
     });
+
     // Log and return the response data
     const data = await response.json();
     return data;
@@ -80,5 +91,5 @@ export const proxyRequestService = async (req: Request, userId: string) => {
 };
 
 
-// How we know it is GET/POST
-// API authenticate/validate
+// Refill Strategy
+// Queue System
