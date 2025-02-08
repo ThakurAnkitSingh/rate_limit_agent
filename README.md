@@ -1,211 +1,162 @@
-# Rate Limiter Proxy Agent🚀
+# 🚀 Rate Limiter Proxy Agent - Advanced API Protection System
 
-The Rate Limiting Proxy API is a backend service designed to protect APIs from abuse by enforcing rate limits on incoming requests. It acts as a proxy server, managing and controlling the traffic flow between clients and the API. By leveraging ExpressJs, Redis, Rate Limit Algo including (Token Bucket, rolling_window), PostgreSQL (Supabase), TypeScript, and JWT authentication, it ensures secure access while providing configurable rate limiting strategies. This project helps prevent API overloads and ensures consistent performance by limiting excessive requests, enabling better scalability and security for your applications.
+## 🎯 What Problem Does It Solve?
 
-## Technologies Used
+In today's digital landscape, APIs face critical challenges:
+- Distributed Denial of Service (DDoS) attacks
+- Automated scraping and data harvesting
+- Sudden traffic surges causing system overload
+- Unauthorized API access and abuse
+- Resource exhaustion from excessive requests
 
-- Rest APIs
-- TypeScript
-- Redis
-- PostgreSQL (Supabase)
-- Git
-- ExpressJS
+Our Rate Limiter Proxy Agent provides a comprehensive solution by implementing an intelligent protective layer between clients and your APIs, ensuring:
+- Robust API security
+- Consistent performance under load
+- Fair resource allocation
+- Granular access control
 
+## 🌟 Key Differentiators
 
-## Purpose
+1. **Adaptive Rate Limiting Algorithms**
+   - Token Bucket: Burst-friendly traffic shaping with configurable token regeneration
+   - Sliding Window: High-precision request tracking with millisecond accuracy
+   - Leaky Bucket: Guaranteed stable outflow with customizable leak rates
+   - Fixed Window: Simple but effective time-sliced quotas
 
-The Rate Limiting Proxy API project is a middleware server that enforces rate limits on API requests, ensuring protection against excessive traffic. It handles user authentication via JWT, offers scalable rate limiting, and provides real-time monitoring and logging. Built with TypeScript, ExpressJs, Redis, PostgreSQL(Supabase), and Rest API, it acts as a proxy, forwarding requests while managing traffic flow and enforcing rate limits based on configurable rules. The project aims to secure APIs and optimize backend performance.
+2. **Intelligent Request Management**
+   - Priority-based request queueing
+   - Graceful request throttling
+   - Automatic retry mechanisms
+   - Dynamic queue sizing
+   - Request coalescing for efficiency
 
-## How to Start the Project
+3. **Comprehensive Monitoring Suite**
+   - Real-time traffic visualization
+   - Predictive breach detection
+   - Queue health metrics
+   - Latency tracking
+   - Rate limit violation alerts
 
-1. Clone the Repository `git clone https://github.com/ThakurAnkitSingh/rate_limit_agent.git`
-2. Install the required dependencies from `node_modules - npm install`.
-3. Configure Environment Variables `.env`
-4. Start the Application with the command `npm start`.
+## 🛠️ Technical Architecture
 
-## Project Structure
+- **Core Framework**: ExpressJS + TypeScript for type-safe development
+- **Data Layer**: PostgreSQL via Supabase for scalable persistence
+- **Rate Limiting Engine**: Redis for high-performance rate limiting
+- **Security**: JWT-based authentication with rotating keys
+- **API Design**: RESTful principles with OpenAPI specification
+- **Development**: Modern Git workflow with automated testing
 
-```plaintext
-Rate_Limit Project/
-│
-├── .codegpt                 # CodeGPT configuration or related files
-├── .env                     # Environment variables for configuration
-├── .gitignore               # Git ignore file
-├── nodemon.json             # Configuration for Nodemon
-├── package-lock.json        # NPM lock file for dependency versions
-├── package.json             # NPM package configuration file
-├── tsconfig.json            # TypeScript configuration file
-│
-├── node_modules             # Node.js dependencies
-│
-├── src/                     # Main source code directory
-│   ├── config/              # Configuration files
-│   ├── controllers/         # Controller files handling requests
-│   │   ├── apiController.ts
-│   │   ├── authController.ts
-│   │   └── proxyController.ts
-│   ├── helper/              # Helper utility functions - you can check whether the project is working. Already there is necessary details you just need to uncomment the code and start the project
-│   │   └── checkRateLimiter.ts
-│   ├── interfaces/          # TypeScript interfaces
-│   │   └── interface.ts
-│   ├── middleware/          # Middleware files for request processing
-│   │   └── auth.ts
-│   ├── routes/              # API route files
-│   │   ├── api.ts
-│   │   ├── auth.ts
-│   │   └── proxy.ts
-│   ├── services/            # Service files for business logic
-│   │   ├── apiService.ts
-│   │   ├── authService.ts
-│   │   └── proxyService.ts
-│   ├── utils/               # Utility functions like JWT and rate limiting
-│   │   ├── jwt.ts
-│   │   └── rateLimit.ts
-│   ├── index.ts             # Main entry point of the application
-│   └── testSupabase.ts      # Testing file related to Supabase
-│
-└── ...                      # Other project files or directories
+## 🔥 Advanced Features
 
-```
+### 1. Sophisticated Rate Limiting
+- Multiple concurrent rate limiting strategies
+- Dynamic quota adjustment
+- Intelligent request queuing with priorities
+- Proactive breach prevention
+- Custom rate limit policies
 
-## Setup Instructions
+### 2. Enterprise-Grade Security
+- Cryptographically secure API keys
+- Fine-grained access control
+- Automatic key expiration
+- Request signing and validation
+- Audit logging
 
-1. **Clone the Repository:**
+### 3. Intelligent Request Handling
+- Smart request routing
+- Response caching with invalidation
+- Circuit breaking
+- Request/Response transformation
+- Error handling with retries
+
+## Getting Started
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/ThakurAnkitSingh/rate_limit_agent.git
    ```
 
-2. **Install Dependencies:**
+2. Install dependencies:
+   ```bash
+   npm install
    ```
-   npm install or npm i
+
+3. Configure environment:
+   Create `.env` file with required variables:
+   ```
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_key
+   REDIS_HOST=your_redis_host
+   REDIS_PORT=your_redis_port
+   REDIS_PASSWORD=your_redis_password
+   REDIS_USERNAME=your_redis_username
+   JWT_SECRET=your_jwt_secret
    ```
 
-3. **Configure Environment Variables:**
-   - Create a `.env` file in the root directory (`.env`) and add the necessary environment variables, such as:
-     ```
-     SUPABASE_URL=SUPABASE_URL
-     SUPABASE_ANON_KEY= SUPABASE_ANON_KEY
-     REDIS_HOST=REDIS_HOST
-     REDIS_PORT=REDIS_PORT
-     REDIS_PASSWORD=REDIS_PASSWORD
-     REDIS_USERNAME=REDIS_USERNAME
-     JWT_SECRET=JWT_SECRET
-     ```
+4. Start the service:
+   ```bash
+   npm start
+   ```
 
-5. **Check Project is Working:**
-   - **Endpoint:** `/`
-   - **Method:** GET
-   - **Response:**
-     ```
-     Rate Limiting Proxy API is running!
-     ```
+## Project Architecture
 
-## API Endpoints
+The Rate Limit Agent is structured as a modular Node.js/TypeScript application:
 
-1. **Register API Request:**
-   - **Endpoint:** `/api/register`
-   - **API Curl**
-     ```
-       curl --location 'http://localhost:5000/api/register' \
-      --header 'Content-Type: application/json' \
-      --data '{
-        "name": "Demo2",
-        "baseUrl": "https://jsonplaceholder.typicode.com/posts",
-        "rateLimitStrategy": "token_bucket",
-        "requestCount": 10,
-        "timeWindow": 20
-      }'
-      ```
-   - **Method:** POST
-   - **Request Body:**
-     ```json
-     {
-     "name": "Demo2",
-     "baseUrl": "https://jsonplaceholder.typicode.com/posts",
-     "requestCount": 10,
-     "timeWindow": 20
-     }
-     ```
-   - **Response:**
-     ```json
-     {
-         "appId": 5
-     }
-     ```
+### Core Components
 
-2. **Generate API Key:**
-   - **Endpoint:** `/api/generate-api-key`
-   - **Method:** POST
-   - **Curl**
-     ```
-     curl --location 'http://localhost:5000/api/generate-api-key' \
-      --header 'Content-Type: application/json' \
-      --data '{
-      "appId": 5
-     }'
-      ```
-   - **Request Body:**
-     ```json
-     {
-         "appId": 5
-     }
-     ```
-   - **Response:**
-     ```json
-     {
-         "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJZCI6NSwiaWF0IjoxNzM2MjYwMzU4LCJleHAiOjE3MzYyNjM5NTh9.mBEVvUgVyj3X8owdxKCodK7PgyKLgiRv0A_P8JVrpD4",
-     }
-     ```
+1. Rate Limiting Engine (`src/utils/rateLimit.ts`)
+   - Implements multiple rate limiting algorithms:
+     - Token Bucket - Smooth rate limiting with burst handling
+     - Rolling Window - Precise time-based limiting
+     - Leaky Bucket - Constant rate processing
+     - Fixed Window - Simple time-window based limiting
+   - Queue management for handling excess requests
+   - Redis-based state management
 
-3. **Proxy API Results :**
-   - **Endpoint:** `/api/proxy/5`
-   - **Method:** POST
-   - **Curl**
-     ```
-     curl --location --request POST 'http://localhost:5000/api/proxy/5' \
-      --header 'Content-Type: application/json' \
-      --header 'x-api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJZCI6NSwiaWF0IjoxNzM2MjYwMzU4LCJleHAiOjE3MzYyNjM5NTh9.mBEVvUgVyj3X8owdxKCodK7PgyKLgiRv0A_P8JVrpD4'
-      ```
-   - **Request Body:**
-     ```json
-     {}
-     ```
-   - **Response:**
-     ```json
-     {
-      [
-          {
-           "userId": 1,
-           "id": 1,
-           "title": "nesciunt iure omnis dolorem tempora et accusantium",
-           "body": "quo et expedita modi cum officia vel magni\ndoloribus qui repudiandae\nvero nisi sit\nquos veniam quod sed accusamus veritatis error"
-          },
-         {
-           "userId": 1,
-           "id": 2,
-           "title": "nesciunt iure omnis dolorem tempora et accusantium",
-           "body": "quo et expedita modi cum officia vel magni\ndoloribus qui repudiandae\nvero nisi sit\nquos veniam quod sed accusamus veritatis error"
-          },
-         {
-           "userId": 2,
-           "id": 3,
-           "title": "nesciunt iure omnis dolorem tempora et accusantium",
-           "body": "quo et expedita modi cum officia vel magni\ndoloribus qui repudiandae\nvero nisi sit\nquos veniam quod sed accusamus veritatis error"
-          },
-         {
-           "userId": 3,
-           "id": 4,
-           "title": "nesciunt iure omnis dolorem tempora et accusantium",
-           "body": "quo et expedita modi cum officia vel magni\ndoloribus qui repudiandae\nvero nisi sit\nquos veniam quod sed accusamus veritatis error"
-          },
-         {
-           "userId": 4,
-           "id": 5,
-           "title": "nesciunt iure omnis dolorem tempora et accusantium",
-           "body": "quo et expedita modi cum officia vel magni\ndoloribus qui repudiandae\nvero nisi sit\nquos veniam quod sed accusamus veritatis error"
-          }
-       ]
-     }
-     ```
+2. Request Handler (`src/helper/checkRateLimiter.ts`) 
+   - Processes incoming API requests
+   - Applies appropriate rate limiting strategy
+   - Manages request queuing and processing
+   - Handles rate limit responses
 
-     ## I hope you would like my project Rate Limiter🚀
+3. Configuration Management
+   - Environment-based configuration via `.env`
+   - Redis connection management
+   - Rate limit policy configuration
+   - API key management
+
+### Data Flow
+
+1. Request Processing:
+   ```
+   Client Request → Load Config → Check Rate Limit → Queue/Process → Response
+   ```
+
+2. Rate Limit Check:
+   ```
+   Get Limit Config → Check Current Usage → Apply Algorithm → Update State
+   ```
+
+3. Queue Processing:
+   ```
+   Queue Request → Monitor Limits → Process Queue → Send Response
+   ```
+
+### Technology Stack
+
+- TypeScript/Node.js - Core runtime
+- Redis - Rate limit state and queue management
+- Express.js - API framework
+- JWT - API key authentication
+- Supabase - Configuration storage
+
+The system is designed to be horizontally scalable with Redis providing distributed state management across multiple instances.
+
+
+## 👋 Bye!
+
+Thanks for exploring our Rate Limiter Proxy Agent! We hope this documentation helps you understand and implement robust API rate limiting in your applications. For questions, issues or contributions, please visit our GitHub repository.
+
+If you found this project helpful, please consider giving it a ⭐️ star on GitHub and sharing it with others who might benefit from better API rate limiting!
+
+Stay safe and rate limit responsibly! 🚀 
